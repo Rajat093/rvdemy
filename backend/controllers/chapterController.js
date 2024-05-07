@@ -1,3 +1,4 @@
+import SectionModel from "../Models/SectionModel.js";
 import chapterModel from "../Models/chapterModel.js";
 import dotenv from "dotenv";
 
@@ -17,8 +18,19 @@ export const createChapterController = async (req, res) => {
       case !VideoUrl:
         return res.status(500).send({ error: "VideoUrl is required" });
     }
+    let existingSection = await SectionModel.findOne({ _id: SectionId });
+    if (!existingSection)
+      return res
+        .status(404)
+        .json({ message: "Section with this id doesn't exist" });
+
     const chapter = new chapterModel({ ...req.fields });
     await chapter.save();
+
+    const newSection = await SectionModel.findByIdAndUpdate(SectionId, {
+      chapters: [...existingSection.chapters, chapter._id],
+    });
+    console.log(newSection);
     res.status(200).send({
       success: true,
       message: "Chapter Created ",

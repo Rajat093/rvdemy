@@ -52,9 +52,10 @@ export const createSectionController = async (req, res) => {
 export const getSectionsController = async (req, res) => {
   try {
     let { id } = req.params;
-    const sections = await SectionModel.find({ CourseId: id }).populate(
-      "chapters"
-    );
+    const sections = await SectionModel.find({ CourseId: id }).populate({
+      path: "chapters",
+      options: { sort: { order: 1 } },
+    });
     res.status(200).send({
       success: true,
       message: "successfully fetched all sections",
