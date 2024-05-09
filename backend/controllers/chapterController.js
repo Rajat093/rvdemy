@@ -4,44 +4,53 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-//create chapter
 export const createChapterController = async (req, res) => {
   try {
-    const { Name, order, SectionId, VideoUrl } = req.fields;
+    console.log("bod", req.file);
+
+    const { Name, order, SectionId } = req.body;
+    const VideoUrl = req.file.path; // Access the uploaded file path
     switch (true) {
       case !Name:
         return res.status(500).send({ error: "Name is required" });
       case !order:
-        return res.status(500).send({ error: "order is required" });
+        return res.status(500).send({ error: "Order is required" });
       case !SectionId:
-        return res.status(500).send({ error: "SectionId is required" });
+        return res.status(500).send({ error: "Section Id is required" });
       case !VideoUrl:
-        return res.status(500).send({ error: "VideoUrl is required" });
+        return res.status(500).send({ error: "Url is required" });
     }
+
     let existingSection = await SectionModel.findOne({ _id: SectionId });
-    if (!existingSection)
+    if (!existingSection) {
       return res
         .status(404)
         .json({ message: "Section with this id doesn't exist" });
+    }
 
-    const chapter = new chapterModel({ ...req.fields });
+    const chapter = new chapterModel({
+      Name,
+      order,
+      SectionId,
+      VideoUrl,
+    });
+
     await chapter.save();
 
-    const newSection = await SectionModel.findByIdAndUpdate(SectionId, {
-      chapters: [...existingSection.chapters, chapter._id],
-    });
-    console.log(newSection);
-    res.status(200).send({
+    existingSection.chapters.push(chapter._id);
+    await existingSection.save();
+
+    res.status(201).json({
       success: true,
-      message: "Chapter Created ",
+      message: "Chapter created",
       chapter,
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).send({
+    console.error(error);
+    res.status(500).json({
       success: false,
-      message: "error Creating Capter",
-      error,
+      message: "Error creating chapter",
+      error: error.message,
     });
   }
 };
