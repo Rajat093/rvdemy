@@ -11,32 +11,35 @@ dotenv.config();
 export const createSectionController = async (req, res) => {
   try {
     const { CourseId, name, order, chapters } = req.body;
-    if (!CourseId) {
-      return res.status(404).json({ message: "Course ID is required" });
-    }
-    let existingCourse = await courseModel.findOne({ _id: CourseId });
-    if (!existingCourse) {
-      return res.status(404).json({ message: "No such course exists" });
-    }
-    if (chapters.length) {
-      let chapterIds = [];
-      for (let i = 0; i < chapters.length; i++) {
-        let newChapter = new chapterModel(chapters[i]);
-        await newChapter.save();
-        chapterIds.push(newChapter.id);
+    const { createdBy } = await courseModel.findById(CourseId);
+    if (req.user._id == createdBy) {
+      if (!CourseId) {
+        return res.status(404).json({ message: "Course ID is required" });
       }
-      const section = new SectionModel({
-        CourseId, // Include CourseId here
-        name,
-        order,
-        chapters: chapterIds,
-      });
-      await section.save();
-      return res
-        .status(201)
-        .json({ message: "Section created successfully", section });
-    } else {
-      return res.status(500).json({ message: "No chapters found" });
+      let existingCourse = await courseModel.findOne({ _id: CourseId });
+      if (!existingCourse) {
+        return res.status(404).json({ message: "No such course exists" });
+      }
+      if (chapters.length) {
+        let chapterIds = [];
+        for (let i = 0; i < chapters.length; i++) {
+          let newChapter = new chapterModel(chapters[i]);
+          await newChapter.save();
+          chapterIds.push(newChapter.id);
+        }
+        const section = new SectionModel({
+          CourseId, // Include CourseId here
+          name,
+          order,
+          chapters: chapterIds,
+        });
+        await section.save();
+        return res
+          .status(201)
+          .json({ message: "Section created successfully", section });
+      } else {
+        return res.status(500).json({ message: "No chapters found" });
+      }
     }
   } catch (error) {
     console.log(error);
@@ -82,9 +85,12 @@ export const deleteSectionController = async (req, res) => {
     if (!section) {
       return res.status(404).json({ message: "Section not found" });
     }
-    await chapterModel.deleteMany({ _id: { $in: section.chapters } });
-    await SectionModel.findByIdAndDelete(id);
-    return res.status(200).json({ message: "Section deleted successfully" });
+    const { createdBy } = await courseModel.findById(section.CourseId);
+    if (req.user._id == createdBy) {
+      await chapterModel.deleteMany({ _id: { $in: section.chapters } });
+      await SectionModel.findByIdAndDelete(id);
+      return res.status(200).json({ message: "Section deleted successfully" });
+    }
   } catch (error) {
     console.log(error);
     res.status(500).json({
@@ -98,23 +104,28 @@ export const deleteSectionController = async (req, res) => {
 //update section
 export const updateSectionController = async (req, res) => {
   try {
-    const { name, order } = req.body;
+    const { name, order, CourseId } = req.body;
+    const { createdBy } = await courseModel.findById(CourseId);
     switch (true) {
       case !name:
         return res.status(500).send({ error: "Name is required" });
       case !order:
         return res.status(500).send({ error: "order is required" });
     }
-    const section = await SectionModel.findByIdAndUpdate(
-      req.params.id,
-      { ...req.body },
-      { new: true }
-    );
-    res.status(201).send({
-      success: true,
-      message: "Section Updated Successfully",
-      section,
-    });
+    if (createdBy == req.user._id) {
+      const section = await SectionModel.findByIdAndUpdate(
+        req.params.id,
+        { ...req.body },
+        { new: true }
+      );
+      res.status(201).send({
+        success: true,
+        message: "Section Updated Successfully",
+        section,
+      });
+    } else {
+      res.status(403).send({ message: "Unauthorised update Query" });
+    }
   } catch (error) {
     console.log(error);
     res.status(500).send({

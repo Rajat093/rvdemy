@@ -6,17 +6,36 @@ import {
   updateChapterController,
 } from "../controllers/chapterController.js";
 import formidable from "express-formidable";
+import { requireSignIn, isAdmin } from "../Middleware/authMiddleWare.js";
 
 const router = express.Router();
 
 //create
-router.post("/create-chapter", formidable(), createChapterController);
+router.post(
+  "/create-chapter",
+  formidable(),
+  requireSignIn,
+  isAdmin,
+  createChapterController
+);
 
 //update
-router.put("/update-chapter/:id", formidable(), updateChapterController);
+router.put(
+  "/update-chapter/:id",
+  formidable(),
+  requireSignIn,
+  isAdmin,
+  updateChapterController
+);
 
 //delete
-router.delete("/delete-chapter/:id", formidable(), deleteChapterController);
+router.delete(
+  "/delete-chapter/:id",
+  formidable(),
+  requireSignIn,
+  isAdmin,
+  deleteChapterController
+);
 
 //get
 router.get("/get-chapters", formidable(), getChaptersController);

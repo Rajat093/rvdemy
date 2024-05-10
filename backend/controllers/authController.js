@@ -85,9 +85,13 @@ export const loginController = async (req, res) => {
     }
 
     //validation token
-    const token = await JWT.sign({ _id: user._id }, process.env.JWT_KEY, {
-      expiresIn: "7d",
-    });
+    const token = await JWT.sign(
+      { _id: user._id, role: user.role },
+      process.env.JWT_KEY,
+      {
+        expiresIn: "7d",
+      }
+    );
     res.status(200).send({
       success: true,
       message: "Login Successful",
@@ -166,7 +170,7 @@ export const updateUserProfile = async (req, res) => {
       });
     }
     const hashedPassword = password ? await hashPassword(password) : undefined;
-    const updatedUser = await userModell.findByIdAndUpdate(
+    const updatedUser = await userModel.findByIdAndUpdate(
       req.user._id,
       {
         name: name || user.name,

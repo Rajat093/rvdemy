@@ -13,6 +13,12 @@ const courseSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    published: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "users" },
   },
   { timestamps: true }
 );

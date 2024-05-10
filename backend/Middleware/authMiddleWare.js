@@ -5,9 +5,20 @@ import userModel from "../Models/userModel.js";
 
 export const requireSignIn = async (req, res, next) => {
   try {
-    const decode = JWT.verify(req.headers.authorization, process.env.JWT_KEY);
-    req.user = decode;
-    next();
+    JWT.verify(
+      req.headers.authorization,
+      process.env.JWT_KEY,
+      function (err, decoded) {
+        if (req.path !== "/get-courses" && err) {
+          console.log(err);
+          return res.status(403).send({ message: "Unauthorised" });
+        }
+        if (decoded) {
+          req.user = decoded;
+        }
+        next();
+      }
+    );
   } catch (error) {
     console.log(error);
   }

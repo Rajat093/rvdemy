@@ -8,9 +8,10 @@ dotenv.config();
 
 export const createCourseController = async (req, res) => {
   try {
-    const { Name, description } = req.fields;
+    const { Name, description, published } = req.fields;
     const { thumbnail } = req.files;
 
+    const createdBy = req.user._id;
     switch (true) {
       case !Name:
         return res.status(500).send({ error: "Name is required" });
@@ -18,8 +19,10 @@ export const createCourseController = async (req, res) => {
         return res.status(500).send({ error: "thumbnail is required" });
       case !description:
         return res.status(500).send({ error: "description is required" });
+      case !published:
+        return res.status(500).send({ error: "published is required" });
     }
-    const Course = new courseModel({ ...req.fields });
+    const Course = new courseModel({ ...req.fields, createdBy });
     if (thumbnail) {
       Course.thumbnail.data = fs.readFileSync(thumbnail.path);
       Course.thumbnail.contentType = thumbnail.type;
@@ -43,7 +46,7 @@ export const createCourseController = async (req, res) => {
 
 export const updateCourseController = async (req, res) => {
   try {
-    const { Name, description } = req.fields;
+    const { Name, description, published } = req.fields;
     const { thumbnail } = req.files;
     switch (true) {
       case !Name:
@@ -52,6 +55,8 @@ export const updateCourseController = async (req, res) => {
         return res.status(500).send({ error: "thumbnail is required" });
       case !description:
         return res.status(500).send({ error: "description is required" });
+      case !published:
+        return res.status(500).send({ error: "published is required" });
     }
     const Course = await courseModel.findByIdAndUpdate(
       req.params.id,
@@ -98,7 +103,29 @@ export const deleteCourseController = async (req, res) => {
 //get course
 export const getCourseController = async (req, res) => {
   try {
-    const course = await courseModel.findOne({ _id: req.params.id });
+    const isAdmin = req.user.role === "admin";
+    const course = await courseModel.findOne({
+      _id: req.params.id,
+      $or: [{ published: true }, { createdBy: req.user._id }],
+    });
+
+    if (!course) {
+      return res.status(404).send({
+        success: false,
+        message: "Course not found",
+      });
+    }
+
+    if (
+      !isAdmin &&
+      !course.published &&
+      course.createdBy.toString() !== req.user._id
+    ) {
+      return res.status(403).send({
+        success: false,
+        message: "You do not have permission to access this course",
+      });
+    }
 
     res.status(200).send({
       success: true,
@@ -118,7 +145,19 @@ export const getCourseController = async (req, res) => {
 // get courses
 export const getCoursesController = async (req, res) => {
   try {
-    const courses = await courseModel.find({});
+    let courses;
+    if (req.user) {
+      const isAdmin = req.user.role === "admin";
+      if (isAdmin) {
+        courses = await courseModel.find({
+          $or: [{ published: true }, { createdBy: req.user._id }],
+        });
+      } else {
+        courses = await courseModel.find({ published: true });
+      }
+    } else {
+      courses = await courseModel.find({ published: true });
+    }
     const total = courses.length;
     res.status(200).send({
       success: true,
