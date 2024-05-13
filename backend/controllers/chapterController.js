@@ -9,6 +9,8 @@ export const createChapterController = async (req, res) => {
   try {
     const { Name, order, SectionId } = req.body;
     const VideoUrl = req.file.path; // Access the uploaded file path
+    console.log(req.user);
+
     const { CourseId } = await SectionModel.findById(SectionId);
     const { createdBy } = await courseModel.findById(CourseId);
     switch (true) {
@@ -38,8 +40,14 @@ export const createChapterController = async (req, res) => {
 
       await chapter.save();
 
-      existingSection.chapters.push(chapter._id);
-      await existingSection.save();
+      // existingSection.chapters.push(chapter._id);
+      // await existingSection.save();
+      let newChapters = [...existingSection.chapters, chapter._id];
+      await SectionModel.findByIdAndUpdate(
+        existingSection.id,
+        { chapters: newChapters },
+        { new: true }
+      );
 
       res.status(201).json({
         success: true,

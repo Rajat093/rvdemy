@@ -10,8 +10,10 @@ dotenv.config();
 //create section
 export const createSectionController = async (req, res) => {
   try {
-    const { CourseId, name, order, chapters } = req.body;
+    const { CourseId, name, order } = req.fields;
+
     const { createdBy } = await courseModel.findById(CourseId);
+
     if (req.user._id == createdBy) {
       if (!CourseId) {
         return res.status(404).json({ message: "Course ID is required" });
@@ -20,26 +22,23 @@ export const createSectionController = async (req, res) => {
       if (!existingCourse) {
         return res.status(404).json({ message: "No such course exists" });
       }
-      if (chapters.length) {
-        let chapterIds = [];
-        for (let i = 0; i < chapters.length; i++) {
-          let newChapter = new chapterModel(chapters[i]);
-          await newChapter.save();
-          chapterIds.push(newChapter.id);
-        }
-        const section = new SectionModel({
-          CourseId, // Include CourseId here
-          name,
-          order,
-          chapters: chapterIds,
-        });
-        await section.save();
-        return res
-          .status(201)
-          .json({ message: "Section created successfully", section });
-      } else {
-        return res.status(500).json({ message: "No chapters found" });
-      }
+
+      // let chapterIds = [];
+      // for (let i = 0; i < chapters.length; i++)
+      //   let newChapter = new chapterModel(chapters[i]);
+      //   await newChapter.save();
+      //   chapterIds.push(newChapter.id);
+
+      const section = new SectionModel({
+        CourseId, // Include CourseId here
+        name,
+        order,
+        chapters: [],
+      });
+      await section.save();
+      return res
+        .status(201)
+        .json({ message: "Section created successfully", section });
     }
   } catch (error) {
     console.log(error);

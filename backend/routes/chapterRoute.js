@@ -13,8 +13,8 @@ const router = express.Router();
 //create
 router.post(
   "/create-chapter",
-  formidable(),
   requireSignIn,
+  formidable(),
   isAdmin,
   createChapterController
 );

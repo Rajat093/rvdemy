@@ -13,6 +13,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 import fs from "fs";
 import { createChapterController } from "./controllers/chapterController.js";
+import { isAdmin, requireSignIn } from "./Middleware/authMiddleWare.js";
 
 // Config env
 dotenv.config();
@@ -57,6 +58,8 @@ const upload = multer({
 app.post(
   "/api/v1/chapter/create-chapter",
   upload,
+  requireSignIn,
+  isAdmin,
   createChapterController,
   (req, res) => {
     // Call createChapterController function here passing req and res

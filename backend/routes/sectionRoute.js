@@ -11,7 +11,13 @@ import { isAdmin, requireSignIn } from "../Middleware/authMiddleWare.js";
 const router = express.Router();
 
 //create
-router.post("/create-section", requireSignIn, isAdmin, createSectionController);
+router.post(
+  "/create-section",
+  requireSignIn,
+  formidable(),
+  isAdmin,
+  createSectionController
+);
 
 //get
 router.get("/get-sections/:id", getSectionsController);

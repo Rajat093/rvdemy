@@ -146,6 +146,7 @@ export const getCourseController = async (req, res) => {
 export const getCoursesController = async (req, res) => {
   try {
     let courses;
+
     if (req.user) {
       const isAdmin = req.user.role === "admin";
       if (isAdmin) {
